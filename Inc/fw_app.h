@@ -20,6 +20,8 @@
 #define FW_APP_PARSER               FW_APP_TXT_PARSER
 //#define FW_APP_PARSER               FW_APP_BIN_PARSER
 
+#define FW_APP_PARSER_CALLBACK      (1) // 0 : No parser callback, 1 : Parser callback
+
 #if FW_APP_PARSER == FW_APP_TXT_PARSER
 #include "fw_lib_txt_message.h"
 #include "fw_lib_txt_parser.h"
@@ -54,7 +56,7 @@
 
 #define FW_APP_DEBUG_PACKET_LENGTH  (128)
 
-#define FW_APP_TICK_INTERVAL        (999)
+#define FW_APP_ONE_SEC_INTERVAL     (999) // 1 second
 
 // Digital In/Out
 #define FW_APP_MAX_DIN              (2)
@@ -69,6 +71,8 @@
 #define FW_APP_BTN_STATE_RELEASED   (0)
 #define FW_APP_BTN_STATE_PRESSED    (1)
 #define FW_APP_BTN_PRESS_CHECK_TIME (10)  // millisecond
+
+#define FW_APP_PROTO_TX_TIMEOUT     (500)
 
 FW_LIB_BEGIN_PACK1
 
@@ -139,6 +143,8 @@ FW_LIB_DECLARE_DATA extern fw_app_t g_app;
 FW_LIB_DECLARE(void) fw_app_init(void);
 FW_LIB_DECLARE(void) fw_app_hw_init(void);
 FW_LIB_DECLARE(void) fw_app_systick(void);
+FW_LIB_DECLARE(fw_lib_dio_port_t*) fw_app_get_dout_port(uint8_t port_id);
+FW_LIB_DECLARE(fw_lib_dio_port_t*) fw_app_get_din_port(uint8_t port_id);
 
 FW_LIB_END_DECLS
 

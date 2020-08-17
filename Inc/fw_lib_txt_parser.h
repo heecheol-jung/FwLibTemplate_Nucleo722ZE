@@ -15,10 +15,10 @@
 
 #define FW_LIB_TXT_DEVICE_ID_MAX_LEN          (2)
 
-// Delimeter for a message id and device id
+// Delimiter for a message id and device id
 #define FW_LIB_TXT_MSG_ID_DEVICE_ID_DELIMITER (' ')
 
-// Delimeter for arguments.
+// Delimiter for arguments.
 #define FW_LIB_TXT_MSG_ARG_DELIMITER          (',')
 
 #define FW_LIB_TXT_PARSER_PARSING             (FW_LIB_ERROR + 1)

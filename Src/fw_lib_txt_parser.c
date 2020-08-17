@@ -163,8 +163,6 @@ FW_LIB_DECLARE(fw_lib_status_t) fw_lib_txt_parser_parse_command(fw_lib_txt_parse
         }
       }
     }
-    
-    fw_lib_txt_parser_clear(parser_handle);
   }
 
   return ret;

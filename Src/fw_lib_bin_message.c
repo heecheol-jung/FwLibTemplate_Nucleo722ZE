@@ -59,20 +59,24 @@ FW_LIB_DECLARE(uint8_t) fw_lib_bin_msg_build_response(const uint32_t device_id, 
   uint16_t crc = 0;
   uint8_t flag = 0;
 
-  if (message_id == FW_LIB_MSG_ID_READ_HW_VERSION)
+  if (error == FW_LIB_OK)
   {
-    // TODO : When error, msg_size should be sizeof(fw_lib_bin_msg_header_t).
-    msg_size = sizeof(fw_bin_msg_read_hw_ver_resp_t);
-  }
-  else if (message_id == FW_LIB_MSG_ID_READ_FW_VERSION)
-  {
-    // TODO : When error, msg_size should be sizeof(fw_lib_bin_msg_header_t).
-    msg_size = sizeof(fw_bin_msg_read_fw_ver_resp_t);
-  }
-  else if (message_id == FW_LIB_MSG_ID_READ_GPIO)
-  {
-    // TODO : When error, msg_size should be sizeof(fw_lib_bin_msg_header_t).
-    msg_size = sizeof(fw_bin_msg_read_gpio_resp_t);
+    if (message_id == FW_LIB_MSG_ID_READ_HW_VERSION)
+    {
+      msg_size = sizeof(fw_bin_msg_read_hw_ver_resp_t);
+    }
+    else if (message_id == FW_LIB_MSG_ID_READ_FW_VERSION)
+    {
+      msg_size = sizeof(fw_bin_msg_read_fw_ver_resp_t);
+    }
+    else if (message_id == FW_LIB_MSG_ID_READ_GPIO)
+    {
+      msg_size = sizeof(fw_bin_msg_read_gpio_resp_t);
+    }
+    else
+    {
+      msg_size = sizeof(fw_lib_bin_msg_header_t);
+    }
   }
   else
   {
