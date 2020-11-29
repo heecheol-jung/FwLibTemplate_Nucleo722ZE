@@ -124,6 +124,7 @@ typedef struct _fw_bin_msg_read_gpio_cmd
 typedef struct _fw_bin_msg_read_gpio_resp
 {
   fw_lib_bin_msg_header_t header;
+  uint8_t                 port_number;
   uint8_t                 port_value;
 } fw_bin_msg_read_gpio_resp_t;
 
@@ -142,6 +143,21 @@ typedef struct _fw_bin_msg_button_evt
   uint8_t                 button_number;
   uint8_t                 button_status;  
 } fw_bin_msg_button_evt_t;
+
+// Read DHT22 temperature/humidity command.
+typedef struct _fw_bin_msg_read_dht22_cmd
+{
+  fw_lib_bin_msg_header_t header;
+  uint8_t                 sensor_number;
+} fw_bin_msg_read_dht22_cmd_t;
+
+// Read DHT22 temperature/humidity response.
+typedef struct _fw_bin_msg_read_dht22_resp
+{
+  fw_lib_bin_msg_header_t header;
+  uint8_t                 sensor_number;
+  uint16_t                sensor_value;
+} fw_bin_msg_read_dht22_resp_t;
 
 
 FW_LIB_END_PACK

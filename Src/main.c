@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
@@ -47,9 +48,11 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-static int                     _i, _temp; //, _len;
-static uint8_t                 _ch;
-static fw_lib_status_t         _ret;
+static int                    _i, _temp; //, _len;
+static uint8_t                _ch;
+static fw_lib_status_t        _ret;
+static uint16_t               _temperature = 0;
+static uint16_t               _humidity = 0;
 
 #if FW_APP_PARSER_CALLBACK == 0
 static fw_lib_bool_t           _cmd_processed;
@@ -104,7 +107,9 @@ int main(void)
   MX_GPIO_Init();
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_Base_Start(&htim2);
   fw_app_hw_init();
   /* USER CODE END 2 */
 
@@ -112,6 +117,26 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+//    _ret = fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle);
+//    if (_ret != FW_LIB_OK)
+//    {
+//      g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "fw_lib_dht22_get_readings error = %u\n", _ret);
+//      HAL_UART_Transmit(g_app.proto_mgr.uart_handle, g_app.proto_mgr.out_buf, g_app.proto_mgr.out_length, FW_APP_PROTO_TX_TIMEOUT);
+//    }
+//    else
+//    {
+//      _ret = fw_lib_dht22_decode_readings(&g_app.dht22[0].dht22_handle);
+//
+//      _temperature = fw_lib_dht22_get_temperature(&g_app.dht22[0].dht22_handle);
+//      _humidity = fw_lib_dht22_get_humidity(&g_app.dht22[0].dht22_handle);
+//      g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "Humidity: %d.%d\n", _humidity / 10, _humidity % 10);
+//      HAL_UART_Transmit(g_app.proto_mgr.uart_handle, g_app.proto_mgr.out_buf, g_app.proto_mgr.out_length, FW_APP_PROTO_TX_TIMEOUT);
+//      g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "Temperature: %d.%d\n", (_temperature & 0xffff) / 10, (_temperature & 0x7fff) % 10);
+//      HAL_UART_Transmit(g_app.proto_mgr.uart_handle, g_app.proto_mgr.out_buf, g_app.proto_mgr.out_length, FW_APP_PROTO_TX_TIMEOUT);
+//
+//    }
+//    HAL_Delay(2000);
+
     // Update logical button status.
     update_logical_button_status();
 
@@ -137,14 +162,14 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
-  /** Configure LSE Drive Capability 
+  /** Configure LSE Drive Capability
   */
   HAL_PWR_EnableBkUpAccess();
-  /** Configure the main internal regulator output voltage 
+  /** Configure the main internal regulator output voltage
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB busses clocks
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
@@ -158,13 +183,13 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /** Activate the Over-Drive mode 
+  /** Activate the Over-Drive mode
   */
   if (HAL_PWREx_EnableOverDrive() != HAL_OK)
   {
     Error_Handler();
   }
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB busses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -249,6 +274,8 @@ static void txt_message_processing(void)
 #else
 static void txt_message_processing(void)
 {
+  fw_lib_status_t         ret;
+
   _temp = fw_lib_q_count(&g_app.proto_mgr.q);
   if (_temp == 0)
   {
@@ -270,7 +297,7 @@ static void txt_message_processing(void)
       case FW_LIB_MSG_ID_READ_HW_VERSION:
         // Version string.
         g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d,%d.%d.%d%c",
-            FW_LIB_TXT_RHVER_STR,
+            fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
             g_app.proto_mgr.parser_handle.device_id,
             FW_LIB_OK,
             FW_APP_HW_MAJOR, FW_APP_HW_MINOR, FW_APP_HW_REVISION,
@@ -280,7 +307,7 @@ static void txt_message_processing(void)
       case FW_LIB_MSG_ID_READ_FW_VERSION:
         // Version string.
         g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d,%d.%d.%d%c",
-            FW_LIB_TXT_RFVER_STR,
+            fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
             g_app.proto_mgr.parser_handle.device_id,
             FW_LIB_OK,
             FW_APP_FW_MAJOR, FW_APP_FW_MINOR, FW_APP_FW_REVISION,
@@ -302,7 +329,7 @@ static void txt_message_processing(void)
                 (fw_lib_dio_read(port, &din_value) == FW_LIB_OK))
             {
               g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d,%d,%d%c",
-                  FW_LIB_TXT_RGPIO_STR,
+                  fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
                   g_app.proto_mgr.parser_handle.device_id,
                   FW_LIB_OK,
                   g_app.proto_mgr.parser_handle.args[0].value.uint8_value,
@@ -316,7 +343,7 @@ static void txt_message_processing(void)
         if (_cmd_processed != FW_LIB_TRUE)
         {
           g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d%c",
-              FW_LIB_TXT_RGPIO_STR,
+              fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
               g_app.proto_mgr.parser_handle.device_id,
               FW_LIB_ERROR,
               FW_LIB_TXT_MSG_TAIL);
@@ -341,7 +368,7 @@ static void txt_message_processing(void)
                 if (fw_lib_dio_write(port, g_app.proto_mgr.parser_handle.args[1].value.uint8_value) == FW_LIB_OK)
                 {
                   g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d%c",
-                      FW_LIB_TXT_WGPIO_STR,
+                      fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
                       g_app.proto_mgr.parser_handle.device_id,
                       FW_LIB_OK,
                       FW_LIB_TXT_MSG_TAIL);
@@ -355,10 +382,84 @@ static void txt_message_processing(void)
         if (_cmd_processed != FW_LIB_TRUE)
         {
           g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d%c",
-              FW_LIB_TXT_WGPIO_STR,
+              fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
               g_app.proto_mgr.parser_handle.device_id,
               FW_LIB_ERROR,
               FW_LIB_TXT_MSG_TAIL);
+        }
+        break;
+
+      case FW_LIB_MSG_ID_READ_TEMPERATURE:
+        if (g_app.proto_mgr.parser_handle.arg_count == 1)
+        {
+          if (g_app.proto_mgr.parser_handle.args[0].value.uint8_value == FW_APP_DHT22_MIN_NUM)
+          {
+            ret = fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle);
+            if (ret == FW_LIB_OK)
+            {
+              uint16_t temperature = 0;
+
+              fw_lib_dht22_decode_readings(&g_app.dht22[0].dht22_handle);
+              temperature = fw_lib_dht22_get_temperature(&g_app.dht22[0].dht22_handle);
+
+              g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d,%d,%d.%d%c",
+                  fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
+                  g_app.proto_mgr.parser_handle.device_id,
+                  FW_LIB_OK,
+                  g_app.proto_mgr.parser_handle.args[0].value.uint8_value,
+                  (temperature & 0xffff) / 10,
+                  (temperature & 0x7fff) % 10,
+                  FW_LIB_TXT_MSG_TAIL);
+
+              _cmd_processed = FW_LIB_TRUE;
+            }
+          }
+
+          if (_cmd_processed != FW_LIB_TRUE)
+          {
+            g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d%c",
+                fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
+                g_app.proto_mgr.parser_handle.device_id,
+                FW_LIB_ERROR,
+                FW_LIB_TXT_MSG_TAIL);
+          }
+        }
+        break;
+
+      case FW_LIB_MSG_ID_READ_HUMIDITY:
+        if (g_app.proto_mgr.parser_handle.arg_count == 1)
+        {
+          if (g_app.proto_mgr.parser_handle.args[0].value.uint8_value == FW_APP_DHT22_MIN_NUM)
+          {
+            ret = fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle);
+            if (ret == FW_LIB_OK)
+            {
+              uint16_t humidity = 0;
+
+              fw_lib_dht22_decode_readings(&g_app.dht22[0].dht22_handle);
+              humidity = fw_lib_dht22_get_humidity(&g_app.dht22[0].dht22_handle);
+
+              g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d,%d,%d.%d%c",
+                  fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
+                  g_app.proto_mgr.parser_handle.device_id,
+                  FW_LIB_OK,
+                  g_app.proto_mgr.parser_handle.args[0].value.uint8_value,
+                  (humidity & 0xffff) / 10,
+                  (humidity & 0x7fff) % 10,
+                  FW_LIB_TXT_MSG_TAIL);
+
+              _cmd_processed = FW_LIB_TRUE;
+            }
+          }
+
+          if (_cmd_processed != FW_LIB_TRUE)
+          {
+            g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d%c",
+                fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
+                g_app.proto_mgr.parser_handle.device_id,
+                FW_LIB_ERROR,
+                FW_LIB_TXT_MSG_TAIL);
+          }
         }
         break;
       }
@@ -493,6 +594,72 @@ static void bin_message_processing(void)
             }
             break;
           }
+
+          case FW_LIB_MSG_ID_READ_TEMPERATURE:
+          {
+            fw_bin_msg_read_dht22_cmd_t* cmd = (fw_bin_msg_read_dht22_cmd_t*)&g_app.proto_mgr.parser_handle.buf[1];
+            if (cmd->sensor_number == FW_APP_DHT22_MIN_NUM)
+            {
+              if (fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle) == FW_LIB_OK)
+              {
+                uint16_t temperature = 0;
+
+                fw_lib_dht22_decode_readings(&g_app.dht22[0].dht22_handle);
+                temperature = fw_lib_dht22_get_temperature(&g_app.dht22[0].dht22_handle);
+
+                fw_bin_msg_read_dht22_resp_t* resp = (fw_bin_msg_read_dht22_resp_t*)&g_app.proto_mgr.out_buf[1];
+                resp->sensor_number = cmd->sensor_number;
+                resp->sensor_value = temperature;
+                g_app.proto_mgr.out_length = fw_lib_bin_msg_build_response(header->device_id,
+                                                                           header->message_id,
+                                                                           FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS),
+                                                                           FW_LIB_FALSE,
+                                                                           FW_LIB_OK,
+                                                                           g_app.proto_mgr.out_buf);
+
+                _cmd_processed = FW_LIB_TRUE;
+              }
+            }
+
+            if (_cmd_processed != FW_LIB_TRUE)
+            {
+              g_app.proto_mgr.out_length = fw_lib_bin_msg_build_response(header->device_id, header->message_id, FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS), FW_LIB_FALSE, FW_LIB_ERROR, g_app.proto_mgr.out_buf);
+            }
+            break;
+          }
+
+          case FW_LIB_MSG_ID_READ_HUMIDITY:
+          {
+            fw_bin_msg_read_dht22_cmd_t* cmd = (fw_bin_msg_read_dht22_cmd_t*)&g_app.proto_mgr.parser_handle.buf[1];
+            if (cmd->sensor_number == FW_APP_DHT22_MIN_NUM)
+            {
+              if (fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle) == FW_LIB_OK)
+              {
+                uint16_t humidity = 0;
+
+                fw_lib_dht22_decode_readings(&g_app.dht22[0].dht22_handle);
+                humidity = fw_lib_dht22_get_humidity(&g_app.dht22[0].dht22_handle);
+
+                fw_bin_msg_read_dht22_resp_t* resp = (fw_bin_msg_read_dht22_resp_t*)&g_app.proto_mgr.out_buf[1];
+                resp->sensor_number = cmd->sensor_number;
+                resp->sensor_value = humidity;
+                g_app.proto_mgr.out_length = fw_lib_bin_msg_build_response(header->device_id,
+                                                                           header->message_id,
+                                                                           FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS),
+                                                                           FW_LIB_FALSE,
+                                                                           FW_LIB_OK,
+                                                                           g_app.proto_mgr.out_buf);
+
+                _cmd_processed = FW_LIB_TRUE;
+              }
+            }
+
+            if (_cmd_processed != FW_LIB_TRUE)
+            {
+              g_app.proto_mgr.out_length = fw_lib_bin_msg_build_response(header->device_id, header->message_id, FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS), FW_LIB_FALSE, FW_LIB_ERROR, g_app.proto_mgr.out_buf);
+            }
+            break;
+          }
         }
       }
 
@@ -544,7 +711,7 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */

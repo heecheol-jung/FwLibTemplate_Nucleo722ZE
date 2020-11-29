@@ -25,6 +25,10 @@ typedef struct _fw_lib_bin_parser
   void*                       context;
 
   fw_lib_msg_cb_on_parsed_t   on_parsed_callback;
+
+  fw_lib_msg_dbg_cb_on_parse_started_t  on_parse_started_callback;
+
+  fw_lib_msg_dbg_cb_on_parse_ended_t    on_parse_ended_callback;
 } fw_lib_bin_parser_t;
 
 FW_LIB_BEGIN_DECLS

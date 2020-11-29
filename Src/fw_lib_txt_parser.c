@@ -20,7 +20,7 @@ FW_LIB_DECLARE(void) fw_lib_txt_parser_init(fw_lib_txt_parser_t* parser_handle)
 FW_LIB_DECLARE(void) fw_lib_txt_parser_clear(fw_lib_txt_parser_t* parser_handle)
 {
   parser_handle->buf_pos = 0;
-  parser_handle->receive_state = FW_LIB_TXT_PARSER_RCV_STS_MSD_ID;
+  parser_handle->receive_state = FW_LIB_TXT_PARSER_RCV_STS_MSG_ID;
   parser_handle->msg_id = FW_LIB_MSG_ID_UNKNOWN;
   parser_handle->arg_count = 0;
 }
@@ -31,9 +31,15 @@ FW_LIB_DECLARE(fw_lib_status_t) fw_lib_txt_parser_parse_command(fw_lib_txt_parse
 
   switch (parser_handle->receive_state)
   {
-  case FW_LIB_TXT_PARSER_RCV_STS_MSD_ID:
+  case FW_LIB_TXT_PARSER_RCV_STS_MSG_ID:
     if (is_msg_id_char(data) == FW_LIB_TRUE)
     {
+      if ((parser_handle->buf_pos == 0) &&
+          (parser_handle->on_parse_started_callback != NULL))
+      {
+        parser_handle->on_parse_started_callback((const void*)parser_handle);
+      }
+
       parser_handle->buf[parser_handle->buf_pos++] = data;
       if (parser_handle->buf_pos > FW_LIB_TXT_MSG_ID_MAX_LEN)
       {
@@ -145,6 +151,11 @@ FW_LIB_DECLARE(fw_lib_status_t) fw_lib_txt_parser_parse_command(fw_lib_txt_parse
   {
     if (ret == FW_LIB_OK)
     {
+      if (parser_handle->on_parse_ended_callback != NULL)
+      {
+        parser_handle->on_parse_ended_callback((const void*)parser_handle);
+      }
+
       if (parser_handle->on_parsed_callback != NULL)
       {
         parser_handle->on_parsed_callback((const void*)parser_handle, parser_handle->context);
@@ -174,7 +185,7 @@ FW_LIB_DECLARE(fw_lib_status_t) fw_lib_txt_parser_parse_response_event(fw_lib_tx
 
   switch (parser_handle->receive_state)
   {
-  case FW_LIB_TXT_PARSER_RCV_STS_MSD_ID:
+  case FW_LIB_TXT_PARSER_RCV_STS_MSG_ID:
     if (is_msg_id_char(data) == FW_LIB_TRUE)
     {
       parser_handle->buf[parser_handle->buf_pos++] = data;
@@ -307,6 +318,10 @@ FW_LIB_DECLARE(uint8_t) fw_lib_txt_parser_get_msg_id(uint8_t* buf, uint8_t buf_s
     {
       return FW_LIB_MSG_ID_BUTTON_EVENT;
     }
+    else if (strcmp(FW_LIB_TXT_RHUM_STR, (const char*)buf) == 0)
+    {
+      return FW_LIB_MSG_ID_READ_HUMIDITY;
+    }
   }
   else if (buf_size == 5)
   {
@@ -325,6 +340,10 @@ FW_LIB_DECLARE(uint8_t) fw_lib_txt_parser_get_msg_id(uint8_t* buf, uint8_t buf_s
     else if (strcmp(FW_LIB_TXT_WGPIO_STR, (const char*)buf) == 0)
     {
       return FW_LIB_MSG_ID_WRITE_GPIO;
+    }
+    else if (strcmp(FW_LIB_TXT_RTEMP_STR, (const char*)buf) == 0)
+    {
+      return FW_LIB_MSG_ID_READ_TEMPERATURE;
     }
   }
 
@@ -380,6 +399,8 @@ static fw_lib_bool_t is_command_with_arguments(uint8_t msg_id)
   {
   case FW_LIB_MSG_ID_READ_GPIO:
   case FW_LIB_MSG_ID_WRITE_GPIO:
+  case FW_LIB_MSG_ID_READ_TEMPERATURE:
+  case FW_LIB_MSG_ID_READ_HUMIDITY:
     return FW_LIB_TRUE;
   }
   return FW_LIB_FALSE;
@@ -422,6 +443,18 @@ static fw_lib_bool_t process_command_data(fw_lib_txt_parser_t* parser_handle)
       ret = FW_LIB_TRUE;
     }
   }
+  else if ((parser_handle->msg_id == FW_LIB_MSG_ID_READ_TEMPERATURE) ||
+           (parser_handle->msg_id == FW_LIB_MSG_ID_READ_HUMIDITY))
+    {
+      if (parser_handle->arg_count < 1)
+      {
+        parser_handle->args[parser_handle->arg_count].type = FW_LIB_ARG_TYPE_UINT8;
+        parser_handle->args[parser_handle->arg_count].value.uint8_value = (uint8_t)atoi((const char*)parser_handle->buf);
+        parser_handle->arg_count++;
+
+        ret = FW_LIB_TRUE;
+      }
+    }
 
   return ret;
 }
@@ -483,6 +516,26 @@ static fw_lib_bool_t process_response_event_data(fw_lib_txt_parser_t* parser_han
     {
       parser_handle->args[parser_handle->arg_count].type = FW_LIB_ARG_TYPE_STRING;
       memcpy(parser_handle->args[parser_handle->arg_count].value.string_value, parser_handle->buf, parser_handle->buf_pos);
+      parser_handle->arg_count++;
+
+      ret = FW_LIB_TRUE;
+    }
+  }
+  else if ((parser_handle->msg_id == FW_LIB_MSG_ID_READ_TEMPERATURE) ||
+           (parser_handle->msg_id == FW_LIB_MSG_ID_READ_HUMIDITY))
+  {
+    if (parser_handle->arg_count < 2)
+    {
+      parser_handle->args[parser_handle->arg_count].type = FW_LIB_ARG_TYPE_UINT8;
+      parser_handle->args[parser_handle->arg_count].value.uint8_value = (uint8_t)atoi((const char*)parser_handle->buf);
+      parser_handle->arg_count++;
+
+      ret = FW_LIB_TRUE;
+    }
+    else if (parser_handle->arg_count == 2)
+    {
+      parser_handle->args[parser_handle->arg_count].type = FW_LIB_ARG_TYPE_DOUBLE;
+      parser_handle->args[parser_handle->arg_count].value.double_value = atof((const char*)parser_handle->buf);
       parser_handle->arg_count++;
 
       ret = FW_LIB_TRUE;

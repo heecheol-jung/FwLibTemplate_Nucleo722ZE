@@ -12,15 +12,18 @@
 #include "fw_lib_queue.h"
 #include "fw_lib_message.h"
 #include "fw_lib_dio.h"
+#include "fw_lib_stm32.h"
+#include "fw_lib_dht22.h"
 
 // Parser defines
 #define FW_APP_TXT_PARSER           (0)
 #define FW_APP_BIN_PARSER           (1)
 
-#define FW_APP_PARSER               FW_APP_TXT_PARSER
-//#define FW_APP_PARSER               FW_APP_BIN_PARSER
+//#define FW_APP_PARSER               FW_APP_TXT_PARSER
+#define FW_APP_PARSER               FW_APP_BIN_PARSER
 
-#define FW_APP_PARSER_CALLBACK      (1) // 0 : No parser callback, 1 : Parser callback
+#define FW_APP_PARSER_CALLBACK      (0) // 0 : No parser callback, 1 : Parser callback
+#define FW_APP_PARSER_DEBUG
 
 #if FW_APP_PARSER == FW_APP_TXT_PARSER
 #include "fw_lib_txt_message.h"
@@ -37,7 +40,7 @@
 
 #define FW_APP_FW_MAJOR             (0)
 #define FW_APP_FW_MINOR             (1)
-#define FW_APP_FW_REVISION          (0)
+#define FW_APP_FW_REVISION          (1)
 
 
 #define FW_APP_UART_HANDLE                                UART_HandleTypeDef*
@@ -73,6 +76,9 @@
 #define FW_APP_BTN_PRESS_CHECK_TIME (10)  // millisecond
 
 #define FW_APP_PROTO_TX_TIMEOUT     (500)
+
+#define FW_APP_DHT22_COUNT          (1)
+#define FW_APP_DHT22_MIN_NUM        (1)
 
 FW_LIB_BEGIN_PACK1
 
@@ -114,6 +120,11 @@ typedef struct _fw_app_button
   uint16_t                pressed_count;          // It represents how long a button is pressed. It is used for de-bounce filtering.
 } fw_app_button;
 
+typedef struct _fw_app_dht22
+{
+  fw_lib_stm32_gpio_handle  dht22_gpio;
+  fw_lib_dht22              dht22_handle;
+} fw_app_dht22_t;
 // Firmware application manager.
 typedef struct _fw_app
 {
@@ -132,6 +143,7 @@ typedef struct _fw_app
   fw_lib_dio_port_t       dins[FW_APP_MAX_DIN];
   fw_lib_dio_port_t       douts[FW_APP_MAX_DOUT];
   fw_app_button           buttons[FW_APP_BTN_COUNT];
+  fw_app_dht22_t          dht22[FW_APP_DHT22_COUNT];
 } fw_app_t;
 
 FW_LIB_END_PACK

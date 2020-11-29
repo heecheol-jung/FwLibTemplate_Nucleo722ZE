@@ -27,6 +27,11 @@ FW_LIB_DECLARE(fw_lib_status_t) fw_lib_bin_parser_parse(fw_lib_bin_parser_t* par
   case FW_LIB_BIN_PARSER_RCV_STS_STX:
     if (data == FW_LIB_BIN_MSG_STX)
     {
+      if (parser_handle->on_parse_started_callback != NULL)
+      {
+        parser_handle->on_parse_started_callback((const void*)parser_handle);
+      }
+
       parser_handle->buf[parser_handle->buf_pos++] = data;
       parser_handle->receive_state = FW_LIB_BIN_PARSER_RCV_STS_DEVICE_ID;
     }
@@ -90,6 +95,11 @@ FW_LIB_DECLARE(fw_lib_status_t) fw_lib_bin_parser_parse(fw_lib_bin_parser_t* par
   {
     if (ret == FW_LIB_OK)
     {
+      if (parser_handle->on_parse_ended_callback != NULL)
+      {
+        parser_handle->on_parse_ended_callback((const void*)parser_handle);
+      }
+
       if (parser_handle->on_parsed_callback != NULL)
       {
         parser_handle->on_parsed_callback((const void*)parser_handle, parser_handle->context);
@@ -137,6 +147,11 @@ static fw_lib_bool_t check_header_payload(fw_lib_bin_parser_t* parser_handle)
     {
       msg_size = sizeof(fw_bin_msg_write_gpio_cmd_t);
     }
+    else if ((header->message_id == FW_LIB_MSG_ID_READ_TEMPERATURE) ||
+             (header->message_id == FW_LIB_MSG_ID_READ_HUMIDITY))
+    {
+      msg_size = sizeof(fw_bin_msg_read_dht22_cmd_t);
+    }
   }
   else if (message_type == FW_LIB_MSG_TYPE_RESPONSE)
   {
@@ -153,6 +168,11 @@ static fw_lib_bool_t check_header_payload(fw_lib_bin_parser_t* parser_handle)
       else if (header->message_id == FW_LIB_MSG_ID_READ_GPIO)
       {
         msg_size = sizeof(fw_bin_msg_read_gpio_resp_t);
+      }
+      else if ((header->message_id == FW_LIB_MSG_ID_READ_TEMPERATURE) ||
+               (header->message_id == FW_LIB_MSG_ID_READ_HUMIDITY))
+      {
+        msg_size = sizeof(fw_bin_msg_read_dht22_resp_t);
       }
     }
   }

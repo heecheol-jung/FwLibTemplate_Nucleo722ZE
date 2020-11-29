@@ -23,7 +23,7 @@
 
 #define FW_LIB_TXT_PARSER_PARSING             (FW_LIB_ERROR + 1)
 
-#define FW_LIB_TXT_PARSER_RCV_STS_MSD_ID      (0)
+#define FW_LIB_TXT_PARSER_RCV_STS_MSG_ID      (0)
 #define FW_LIB_TXT_PARSER_RCV_STS_DEVICE_ID   (1)
 #define FW_LIB_TXT_PARSER_RCV_STS_DATA        (2)
 #define FW_LIB_TXT_PARSER_RCV_STS_TAIL        (3)
@@ -55,6 +55,10 @@ typedef struct _fw_lib_txt_parser
   void*                       context;
 
   fw_lib_msg_cb_on_parsed_t   on_parsed_callback;
+
+  fw_lib_msg_dbg_cb_on_parse_started_t  on_parse_started_callback;
+
+  fw_lib_msg_dbg_cb_on_parse_ended_t    on_parse_ended_callback;
 } fw_lib_txt_parser_t;
 
 FW_LIB_END_PACK

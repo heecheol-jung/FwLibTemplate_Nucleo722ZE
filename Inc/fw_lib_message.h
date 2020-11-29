@@ -28,6 +28,10 @@ FW_LIB_BEGIN_DECLS
 // Button event.
 #define FW_LIB_MSG_ID_BUTTON_EVENT        (5)
 
+#define FW_LIB_MSG_ID_READ_TEMPERATURE    (6)
+
+#define FW_LIB_MSG_ID_READ_HUMIDITY       (7)
+
 // Device IDs
 #define FW_LIB_DEVICE_ID_UNKNOWN          (0)
 
@@ -54,6 +58,8 @@ FW_LIB_BEGIN_DECLS
 #define FW_LIB_ARG_TYPE_INT64             (7)
 #define FW_LIB_ARG_TYPE_UINT64            (8)
 #define FW_LIB_ARG_TYPE_STRING            (9)
+#define FW_LIB_ARG_TYPE_FLOAT             (10)
+#define FW_LIB_ARG_TYPE_DOUBLE            (11)
 #define FW_LIB_ARG_TYPE_CUSTOM            (0xFF)
 
 FW_LIB_BEGIN_PACK1
@@ -72,6 +78,8 @@ typedef struct _fw_lib_msg_arg
     uint32_t  uint32_value;
     int64_t   int64_value;
     uint64_t  uint64_value;
+    float     float_value;
+    double    double_value;
     char      string_value[FW_LIB_MSG_MAX_STRING_LEN];
   } value;
 } fw_lib_msg_arg_t;
@@ -79,6 +87,10 @@ typedef struct _fw_lib_msg_arg
 FW_LIB_END_PACK
 
 typedef void(*fw_lib_msg_cb_on_parsed_t)(const void* parser_handle, void* context);
+
+// Parser debugging purpose(parsing time check, ...)
+typedef void(*fw_lib_msg_dbg_cb_on_parse_started_t)(const void* parser_handle);
+typedef void(*fw_lib_msg_dbg_cb_on_parse_ended_t)(const void* parser_handle);
 
 FW_LIB_END_DECLS
 

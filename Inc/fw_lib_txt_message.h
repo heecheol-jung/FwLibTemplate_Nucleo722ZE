@@ -35,6 +35,8 @@ FW_LIB_BEGIN_DECLS
 #define FW_LIB_TXT_RGPIO_STR                ("RGPIO")
 #define FW_LIB_TXT_WGPIO_STR                ("WGPIO")
 #define FW_LIB_TXT_EBTN_STR                 ("EBTN")
+#define FW_LIB_TXT_RTEMP_STR                ("RTEMP")
+#define FW_LIB_TXT_RHUM_STR                 ("RHUM")
 
 FW_LIB_BEGIN_PACK1
 
