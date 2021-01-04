@@ -1,5 +1,6 @@
 # FwLibTemplate_Nucleo722ZE
 Firmware library template for NUCLEO F722ZE
+Default device ID : 1
 
 1. STM32CubeMX
 - Version 5.6.1
@@ -14,3 +15,7 @@ Firmware library template for NUCLEO F722ZE
 3. Related project
 - Visual Studio 2019 project for protocol test and application
 - https://github.com/heecheol-jung/FwLibTemplate
+
+4. Sensors
+- DHT22, Sensor Number : 1
+- DS18B20, Sensor Number : 2

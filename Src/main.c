@@ -399,7 +399,7 @@ static void txt_message_processing(void)
       case FW_LIB_MSG_ID_READ_TEMPERATURE:
         if (g_app.proto_mgr.parser_handle.arg_count == 1)
         {
-          if (g_app.proto_mgr.parser_handle.args[0].value.uint8_value == FW_APP_DHT22_MIN_NUM)
+          if (g_app.proto_mgr.parser_handle.args[0].value.uint8_value == 1)
           {
             ret = fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle);
             if (ret == FW_LIB_OK)
@@ -416,6 +416,22 @@ static void txt_message_processing(void)
                   g_app.proto_mgr.parser_handle.args[0].value.uint8_value,
                   (temperature & 0xffff) / 10,
                   (temperature & 0x7fff) % 10,
+                  FW_LIB_TXT_MSG_TAIL);
+
+              _cmd_processed = FW_LIB_TRUE;
+            }
+          }
+          else if (g_app.proto_mgr.parser_handle.args[0].value.uint8_value == 2)
+          {
+            fw_lib_ds18b20_manual_convert(&g_app.ds18b20[0]);
+            if (g_app.ds18b20[0].devices[0].data_valid == FW_LIB_TRUE)
+            {
+              g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d,%d,%.2f%c",
+                  fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
+                  g_app.proto_mgr.parser_handle.device_id,
+                  FW_LIB_OK,
+                  g_app.proto_mgr.parser_handle.args[0].value.uint8_value,
+                  g_app.ds18b20[0].devices[0].temperature,
                   FW_LIB_TXT_MSG_TAIL);
 
               _cmd_processed = FW_LIB_TRUE;
@@ -646,7 +662,7 @@ static void bin_message_processing(void)
           case FW_LIB_MSG_ID_READ_TEMPERATURE:
           {
             fw_bin_msg_read_dht22_cmd_t* cmd = (fw_bin_msg_read_dht22_cmd_t*)&g_app.proto_mgr.parser_handle.buf[1];
-            if (cmd->sensor_number == FW_APP_DHT22_MIN_NUM)
+            if (cmd->sensor_number == 1)
             {
               if (fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle) == FW_LIB_OK)
               {
@@ -661,6 +677,26 @@ static void bin_message_processing(void)
                                                                            FW_LIB_FALSE,
                                                                            FW_LIB_OK,
                                                                            g_app.proto_mgr.out_buf);
+
+                _cmd_processed = FW_LIB_TRUE;
+              }
+            }
+            else if (cmd->sensor_number == 2)
+            {
+              fw_lib_ds18b20_manual_convert(&g_app.ds18b20[0]);
+
+              if (g_app.ds18b20[0].devices[0].data_valid == FW_LIB_TRUE)
+              {
+                fw_bin_msg_read_dht22_resp_t* resp = (fw_bin_msg_read_dht22_resp_t*)&g_app.proto_mgr.out_buf[1];
+
+                resp->sensor_number = cmd->sensor_number;
+                resp->sensor_value = (uint16_t)(g_app.ds18b20[0].devices[0].temperature * 10);
+                g_app.proto_mgr.out_length = fw_lib_bin_msg_build_response(header->device_id,
+                                                                      header->message_id,
+                                                                      FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS),
+                                                                      FW_LIB_FALSE,
+                                                                      FW_LIB_OK,
+                                                                      g_app.proto_mgr.out_buf);
 
                 _cmd_processed = FW_LIB_TRUE;
               }

@@ -94,6 +94,8 @@ void Error_Handler(void);
 #define TCK_GPIO_Port GPIOA
 #define DHT22_Pin GPIO_PIN_15
 #define DHT22_GPIO_Port GPIOA
+#define DS18B20_Pin GPIO_PIN_10
+#define DS18B20_GPIO_Port GPIOC
 #define DBG_OUT1_Pin GPIO_PIN_11
 #define DBG_OUT1_GPIO_Port GPIOG
 #define DBG_OUT2_Pin GPIO_PIN_13

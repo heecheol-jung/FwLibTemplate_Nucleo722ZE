@@ -93,10 +93,14 @@ FW_LIB_DECLARE(void) fw_app_hw_init(void)
     fw_lib_dio_write(&g_app.douts[i], FW_LIB_TRUE);
   }
 
-  //fw_lib_dht22_init(&g_app.dht22[0].dht22_handle, DHT22_GPIO_Port, DHT22_Pin);
+  // Initialize DHT22.
   g_app.dht22[0].dht22_gpio.hport = DHT22_GPIO_Port;
   g_app.dht22[0].dht22_gpio.pin_num = DHT22_Pin;
   fw_lib_dht22_init2(&g_app.dht22[0].dht22_handle, &g_app.dht22[0].dht22_gpio, _dht22_gpio_write, _dht22_gpio_read, _dht22_delay_us);
+
+  // Initialize DS18B20.
+  g_app.ds18b20[0].one_wire.cb_delay_us = _dht22_delay_us;
+  fw_lib_ds18b20_init(&g_app.ds18b20[0], DS18B20_GPIO_Port, DS18B20_Pin);
 
   // Message receive in interrupt mode.
   FW_APP_UART_RCV_IT(g_app.proto_mgr.uart_handle, g_app.proto_mgr.rx_buf, 1);
@@ -295,7 +299,7 @@ static void on_message_parsed(const void* parser_handle, void* context)
     if (txt_parser->arg_count == 1)
     {
       // Check sensor number.
-      if (txt_parser->args[0].value.uint8_value == FW_APP_DHT22_MIN_NUM)
+      if (txt_parser->args[0].value.uint8_value == 1)
       {
         ret = fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle);
         if (ret == FW_LIB_OK)
@@ -312,6 +316,22 @@ static void on_message_parsed(const void* parser_handle, void* context)
               txt_parser->args[0].value.uint8_value,
               (temperature & 0xffff) / 10,
               (temperature & 0x7fff) % 10,
+              FW_LIB_TXT_MSG_TAIL);
+
+          cmd_processed = FW_LIB_TRUE;
+        }
+      }
+      else if (g_app.proto_mgr.parser_handle.args[0].value.uint8_value == 2)
+      {
+        fw_lib_ds18b20_manual_convert(&g_app.ds18b20[0]);
+        if (g_app.ds18b20[0].devices[0].data_valid == FW_LIB_TRUE)
+        {
+          proto_mgr->out_length = sprintf((char*)proto_mgr->out_buf, "%s %ld,%d,%d,%.2f%c",
+              fw_lib_txt_msg_get_message_name(txt_parser->msg_id),
+              txt_parser->device_id,
+              FW_LIB_OK,
+              txt_parser->args[0].value.uint8_value,
+              g_app.ds18b20[0].devices[0].temperature,
               FW_LIB_TXT_MSG_TAIL);
 
           cmd_processed = FW_LIB_TRUE;
@@ -509,7 +529,7 @@ static void on_message_parsed(const void* parser_handle, void* context)
     case FW_LIB_MSG_ID_READ_TEMPERATURE:
     {
       fw_bin_msg_read_dht22_cmd_t* cmd = (fw_bin_msg_read_dht22_cmd_t*)&proto_mgr->parser_handle.buf[1];
-      if (cmd->sensor_number == FW_APP_DHT22_MIN_NUM)
+      if (cmd->sensor_number == 1)
       {
         if (fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle) == FW_LIB_OK)
         {
@@ -518,6 +538,26 @@ static void on_message_parsed(const void* parser_handle, void* context)
           fw_bin_msg_read_dht22_resp_t* resp = (fw_bin_msg_read_dht22_resp_t*)&proto_mgr->out_buf[1];
           resp->sensor_number = cmd->sensor_number;
           resp->sensor_value = fw_lib_dht22_get_temperature(&g_app.dht22[0].dht22_handle);
+          proto_mgr->out_length = fw_lib_bin_msg_build_response(header->device_id,
+                                                                header->message_id,
+                                                                FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS),
+                                                                FW_LIB_FALSE,
+                                                                FW_LIB_OK,
+                                                                proto_mgr->out_buf);
+
+          cmd_processed = FW_LIB_TRUE;
+        }
+      }
+      else if (cmd->sensor_number == 2)
+      {
+        fw_lib_ds18b20_manual_convert(&g_app.ds18b20[0]);
+
+        if (g_app.ds18b20[0].devices[0].data_valid == FW_LIB_TRUE)
+        {
+          fw_bin_msg_read_dht22_resp_t* resp = (fw_bin_msg_read_dht22_resp_t*)&proto_mgr->out_buf[1];
+
+          resp->sensor_number = cmd->sensor_number;
+          resp->sensor_value = (uint16_t)(g_app.ds18b20[0].devices[0].temperature * 10);
           proto_mgr->out_length = fw_lib_bin_msg_build_response(header->device_id,
                                                                 header->message_id,
                                                                 FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS),
