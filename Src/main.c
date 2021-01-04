@@ -51,8 +51,6 @@
 static int                    _i, _temp; //, _len;
 static uint8_t                _ch;
 static fw_lib_status_t        _ret;
-static uint16_t               _temperature = 0;
-static uint16_t               _humidity = 0;
 
 #if FW_APP_PARSER_CALLBACK == 0
 static fw_lib_bool_t           _cmd_processed;
@@ -74,7 +72,36 @@ static void update_logical_button_status(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void _gpio_write(const void* gpio_handle, fw_lib_bool_t on_off)
+{
+  fw_lib_stm32_gpio_handle* st_gpio_handle = (fw_lib_stm32_gpio_handle*)gpio_handle;
 
+  HAL_GPIO_WritePin(st_gpio_handle->hport, st_gpio_handle->pin_num, on_off);
+}
+
+fw_lib_bool_t _gpio_read(const void* gpio_handle)
+{
+  fw_lib_stm32_gpio_handle* st_gpio_handle = (fw_lib_stm32_gpio_handle*)gpio_handle;
+
+  return (fw_lib_bool_t)HAL_GPIO_ReadPin(st_gpio_handle->hport, st_gpio_handle->pin_num);
+}
+
+void _delay_us(volatile uint32_t microseconds)
+{
+  uint32_t clk_cycle_start = __HAL_TIM_GET_COUNTER(&htim2);
+
+  /* Go to number of cycles for system */
+  // Timer2 clock : 180 MHz(APB1 timer clock)
+  //                1 us = 108000000 / 1000000 = 108 clocks
+  // microsecond *= (1080000000 / 1000000) -> theoretical formula
+  microseconds *= 108;
+
+  /* Delay till end */
+  while ((uint32_t)(__HAL_TIM_GET_COUNTER(&htim2) - clk_cycle_start) < microseconds)
+  {
+    __ASM volatile ("NOP");
+  }
+}
 /* USER CODE END 0 */
 
 /**
@@ -117,26 +144,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//    _ret = fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle);
-//    if (_ret != FW_LIB_OK)
-//    {
-//      g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "fw_lib_dht22_get_readings error = %u\n", _ret);
-//      HAL_UART_Transmit(g_app.proto_mgr.uart_handle, g_app.proto_mgr.out_buf, g_app.proto_mgr.out_length, FW_APP_PROTO_TX_TIMEOUT);
-//    }
-//    else
-//    {
-//      _ret = fw_lib_dht22_decode_readings(&g_app.dht22[0].dht22_handle);
-//
-//      _temperature = fw_lib_dht22_get_temperature(&g_app.dht22[0].dht22_handle);
-//      _humidity = fw_lib_dht22_get_humidity(&g_app.dht22[0].dht22_handle);
-//      g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "Humidity: %d.%d\n", _humidity / 10, _humidity % 10);
-//      HAL_UART_Transmit(g_app.proto_mgr.uart_handle, g_app.proto_mgr.out_buf, g_app.proto_mgr.out_length, FW_APP_PROTO_TX_TIMEOUT);
-//      g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "Temperature: %d.%d\n", (_temperature & 0xffff) / 10, (_temperature & 0x7fff) % 10);
-//      HAL_UART_Transmit(g_app.proto_mgr.uart_handle, g_app.proto_mgr.out_buf, g_app.proto_mgr.out_length, FW_APP_PROTO_TX_TIMEOUT);
-//
-//    }
-//    HAL_Delay(2000);
-
     // Update logical button status.
     update_logical_button_status();
 
@@ -392,7 +399,7 @@ static void txt_message_processing(void)
       case FW_LIB_MSG_ID_READ_TEMPERATURE:
         if (g_app.proto_mgr.parser_handle.arg_count == 1)
         {
-          if (g_app.proto_mgr.parser_handle.args[0].value.uint8_value == FW_APP_DHT22_MIN_NUM)
+          if (g_app.proto_mgr.parser_handle.args[0].value.uint8_value == 1)
           {
             ret = fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle);
             if (ret == FW_LIB_OK)
@@ -409,6 +416,22 @@ static void txt_message_processing(void)
                   g_app.proto_mgr.parser_handle.args[0].value.uint8_value,
                   (temperature & 0xffff) / 10,
                   (temperature & 0x7fff) % 10,
+                  FW_LIB_TXT_MSG_TAIL);
+
+              _cmd_processed = FW_LIB_TRUE;
+            }
+          }
+          else if (g_app.proto_mgr.parser_handle.args[0].value.uint8_value == 2)
+          {
+            fw_lib_ds18b20_manual_convert(&g_app.ds18b20[0]);
+            if (g_app.ds18b20[0].devices[0].data_valid == FW_LIB_TRUE)
+            {
+              g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d,%d,%.2f%c",
+                  fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
+                  g_app.proto_mgr.parser_handle.device_id,
+                  FW_LIB_OK,
+                  g_app.proto_mgr.parser_handle.args[0].value.uint8_value,
+                  g_app.ds18b20[0].devices[0].temperature,
                   FW_LIB_TXT_MSG_TAIL);
 
               _cmd_processed = FW_LIB_TRUE;
@@ -444,6 +467,47 @@ static void txt_message_processing(void)
                   g_app.proto_mgr.parser_handle.device_id,
                   FW_LIB_OK,
                   g_app.proto_mgr.parser_handle.args[0].value.uint8_value,
+                  (humidity & 0xffff) / 10,
+                  (humidity & 0x7fff) % 10,
+                  FW_LIB_TXT_MSG_TAIL);
+
+              _cmd_processed = FW_LIB_TRUE;
+            }
+          }
+
+          if (_cmd_processed != FW_LIB_TRUE)
+          {
+            g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d%c",
+                fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
+                g_app.proto_mgr.parser_handle.device_id,
+                FW_LIB_ERROR,
+                FW_LIB_TXT_MSG_TAIL);
+          }
+        }
+        break;
+
+      case FW_LIB_MSG_ID_READ_TEMP_AND_HUM:
+        if (g_app.proto_mgr.parser_handle.arg_count == 1)
+        {
+          if (g_app.proto_mgr.parser_handle.args[0].value.uint8_value == FW_APP_DHT22_MIN_NUM)
+          {
+            ret = fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle);
+            if (ret == FW_LIB_OK)
+            {
+              uint16_t temperature = 0;
+              uint16_t humidity = 0;
+
+              fw_lib_dht22_decode_readings(&g_app.dht22[0].dht22_handle);
+              temperature = fw_lib_dht22_get_temperature(&g_app.dht22[0].dht22_handle);
+              humidity = fw_lib_dht22_get_humidity(&g_app.dht22[0].dht22_handle);
+
+              g_app.proto_mgr.out_length = sprintf((char*)g_app.proto_mgr.out_buf, "%s %ld,%d,%d,%d.%d,%d.%d%c",
+                  fw_lib_txt_msg_get_message_name(g_app.proto_mgr.parser_handle.msg_id),
+                  g_app.proto_mgr.parser_handle.device_id,
+                  FW_LIB_OK,
+                  g_app.proto_mgr.parser_handle.args[0].value.uint8_value,
+                  (temperature & 0xffff) / 10,
+                  (temperature & 0x7fff) % 10,
                   (humidity & 0xffff) / 10,
                   (humidity & 0x7fff) % 10,
                   FW_LIB_TXT_MSG_TAIL);
@@ -598,24 +662,41 @@ static void bin_message_processing(void)
           case FW_LIB_MSG_ID_READ_TEMPERATURE:
           {
             fw_bin_msg_read_dht22_cmd_t* cmd = (fw_bin_msg_read_dht22_cmd_t*)&g_app.proto_mgr.parser_handle.buf[1];
-            if (cmd->sensor_number == FW_APP_DHT22_MIN_NUM)
+            if (cmd->sensor_number == 1)
             {
               if (fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle) == FW_LIB_OK)
               {
-                uint16_t temperature = 0;
-
                 fw_lib_dht22_decode_readings(&g_app.dht22[0].dht22_handle);
-                temperature = fw_lib_dht22_get_temperature(&g_app.dht22[0].dht22_handle);
 
                 fw_bin_msg_read_dht22_resp_t* resp = (fw_bin_msg_read_dht22_resp_t*)&g_app.proto_mgr.out_buf[1];
                 resp->sensor_number = cmd->sensor_number;
-                resp->sensor_value = temperature;
+                resp->sensor_value = fw_lib_dht22_get_temperature(&g_app.dht22[0].dht22_handle);
                 g_app.proto_mgr.out_length = fw_lib_bin_msg_build_response(header->device_id,
                                                                            header->message_id,
                                                                            FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS),
                                                                            FW_LIB_FALSE,
                                                                            FW_LIB_OK,
                                                                            g_app.proto_mgr.out_buf);
+
+                _cmd_processed = FW_LIB_TRUE;
+              }
+            }
+            else if (cmd->sensor_number == 2)
+            {
+              fw_lib_ds18b20_manual_convert(&g_app.ds18b20[0]);
+
+              if (g_app.ds18b20[0].devices[0].data_valid == FW_LIB_TRUE)
+              {
+                fw_bin_msg_read_dht22_resp_t* resp = (fw_bin_msg_read_dht22_resp_t*)&g_app.proto_mgr.out_buf[1];
+
+                resp->sensor_number = cmd->sensor_number;
+                resp->sensor_value = (uint16_t)(g_app.ds18b20[0].devices[0].temperature * 10);
+                g_app.proto_mgr.out_length = fw_lib_bin_msg_build_response(header->device_id,
+                                                                      header->message_id,
+                                                                      FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS),
+                                                                      FW_LIB_FALSE,
+                                                                      FW_LIB_OK,
+                                                                      g_app.proto_mgr.out_buf);
 
                 _cmd_processed = FW_LIB_TRUE;
               }
@@ -635,14 +716,42 @@ static void bin_message_processing(void)
             {
               if (fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle) == FW_LIB_OK)
               {
-                uint16_t humidity = 0;
-
                 fw_lib_dht22_decode_readings(&g_app.dht22[0].dht22_handle);
-                humidity = fw_lib_dht22_get_humidity(&g_app.dht22[0].dht22_handle);
 
                 fw_bin_msg_read_dht22_resp_t* resp = (fw_bin_msg_read_dht22_resp_t*)&g_app.proto_mgr.out_buf[1];
                 resp->sensor_number = cmd->sensor_number;
-                resp->sensor_value = humidity;
+                resp->sensor_value = fw_lib_dht22_get_humidity(&g_app.dht22[0].dht22_handle);
+                g_app.proto_mgr.out_length = fw_lib_bin_msg_build_response(header->device_id,
+                                                                           header->message_id,
+                                                                           FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS),
+                                                                           FW_LIB_FALSE,
+                                                                           FW_LIB_OK,
+                                                                           g_app.proto_mgr.out_buf);
+
+                _cmd_processed = FW_LIB_TRUE;
+              }
+            }
+
+            if (_cmd_processed != FW_LIB_TRUE)
+            {
+              g_app.proto_mgr.out_length = fw_lib_bin_msg_build_response(header->device_id, header->message_id, FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS), FW_LIB_FALSE, FW_LIB_ERROR, g_app.proto_mgr.out_buf);
+            }
+            break;
+          }
+
+          case FW_LIB_MSG_ID_READ_TEMP_AND_HUM:
+          {
+            fw_bin_msg_read_dht22_cmd_t* cmd = (fw_bin_msg_read_dht22_cmd_t*)&g_app.proto_mgr.parser_handle.buf[1];
+            if (cmd->sensor_number == FW_APP_DHT22_MIN_NUM)
+            {
+              if (fw_lib_dht22_get_readings(&g_app.dht22[0].dht22_handle) == FW_LIB_OK)
+              {
+                fw_lib_dht22_decode_readings(&g_app.dht22[0].dht22_handle);
+
+                fw_bin_msg_read_dht22_temp_hum_resp_t* resp = (fw_bin_msg_read_dht22_temp_hum_resp_t*)&g_app.proto_mgr.out_buf[1];
+                resp->sensor_number = cmd->sensor_number;
+                resp->temp_value = fw_lib_dht22_get_temperature(&g_app.dht22[0].dht22_handle);
+                resp->hum_value = fw_lib_dht22_get_humidity(&g_app.dht22[0].dht22_handle);
                 g_app.proto_mgr.out_length = fw_lib_bin_msg_build_response(header->device_id,
                                                                            header->message_id,
                                                                            FW_LIB_BIT_FIELD_GET(header->flag1, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_MASK, FW_LIB_BIN_MSG_HDR_FLG1_SEQ_NUM_POS),

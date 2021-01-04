@@ -7,8 +7,8 @@ HeaderPath=Drivers\STM32F7xx_HAL_Driver\Inc;Drivers\STM32F7xx_HAL_Driver\Inc\Leg
 CDefines=USE_HAL_DRIVER;STM32F722xx;USE_HAL_DRIVER;USE_HAL_DRIVER;
 
 [PreviousGenFiles]
-HeaderPath=G:/opensource/firmware/NUCLEO_F722ZE/FwLibTemplate_Nucleo722ZE/Inc
+HeaderPath=F:/project/Firmware/FwLib/NUCLEO_F722ZE/FwLibTemplate_Nucleo722ZE/Inc
 HeaderFiles=gpio.h;tim.h;usart.h;usb_otg.h;stm32f7xx_it.h;stm32f7xx_hal_conf.h;main.h;
-SourcePath=G:/opensource/firmware/NUCLEO_F722ZE/FwLibTemplate_Nucleo722ZE/Src
+SourcePath=F:/project/Firmware/FwLib/NUCLEO_F722ZE/FwLibTemplate_Nucleo722ZE/Src
 SourceFiles=gpio.c;tim.c;usart.c;usb_otg.c;stm32f7xx_it.c;stm32f7xx_hal_msp.c;main.c;
 

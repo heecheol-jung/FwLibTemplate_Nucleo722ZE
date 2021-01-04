@@ -14,15 +14,16 @@
 #include "fw_lib_dio.h"
 #include "fw_lib_stm32.h"
 #include "fw_lib_dht22.h"
+#include "fw_lib_ds18b20.h"
 
 // Parser defines
 #define FW_APP_TXT_PARSER           (0)
 #define FW_APP_BIN_PARSER           (1)
 
-//#define FW_APP_PARSER               FW_APP_TXT_PARSER
-#define FW_APP_PARSER               FW_APP_BIN_PARSER
+#define FW_APP_PARSER               FW_APP_TXT_PARSER
+//#define FW_APP_PARSER               FW_APP_BIN_PARSER
 
-#define FW_APP_PARSER_CALLBACK      (0) // 0 : No parser callback, 1 : Parser callback
+#define FW_APP_PARSER_CALLBACK      (1) // 0 : No parser callback, 1 : Parser callback
 #define FW_APP_PARSER_DEBUG
 
 #if FW_APP_PARSER == FW_APP_TXT_PARSER
@@ -39,7 +40,7 @@
 #define FW_APP_HW_REVISION          (1)
 
 #define FW_APP_FW_MAJOR             (0)
-#define FW_APP_FW_MINOR             (1)
+#define FW_APP_FW_MINOR             (2)
 #define FW_APP_FW_REVISION          (1)
 
 
@@ -79,6 +80,7 @@
 
 #define FW_APP_DHT22_COUNT          (1)
 #define FW_APP_DHT22_MIN_NUM        (1)
+#define FW_APP_DS18B20_COUNT        (1)
 
 FW_LIB_BEGIN_PACK1
 
@@ -144,6 +146,7 @@ typedef struct _fw_app
   fw_lib_dio_port_t       douts[FW_APP_MAX_DOUT];
   fw_app_button           buttons[FW_APP_BTN_COUNT];
   fw_app_dht22_t          dht22[FW_APP_DHT22_COUNT];
+  fw_lib_ds18b20_manager  ds18b20[FW_APP_DS18B20_COUNT];
 } fw_app_t;
 
 FW_LIB_END_PACK

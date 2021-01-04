@@ -9,7 +9,7 @@ FW_LIB_BEGIN_DECLS
 
 #define FW_LIB_TXT_MSG_MAX_LENGTH           (64)
 
-#define FW_LIB_TXT_MSG_MAX_ARG_COUNT        (3)
+#define FW_LIB_TXT_MSG_MAX_ARG_COUNT        (4)
 
 // The last character for a message.
 #define FW_LIB_TXT_MSG_TAIL                 ('\n')
@@ -37,6 +37,7 @@ FW_LIB_BEGIN_DECLS
 #define FW_LIB_TXT_EBTN_STR                 ("EBTN")
 #define FW_LIB_TXT_RTEMP_STR                ("RTEMP")
 #define FW_LIB_TXT_RHUM_STR                 ("RHUM")
+#define FW_LIB_TXT_RTAH_STR                 ("RTAH")
 
 FW_LIB_BEGIN_PACK1
 
