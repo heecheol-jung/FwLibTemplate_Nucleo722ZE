@@ -22,7 +22,7 @@
 //#define FW_APP_PARSER               FW_APP_TXT_PARSER
 #define FW_APP_PARSER               FW_APP_BIN_PARSER
 
-#define FW_APP_PARSER_CALLBACK      (0) // 0 : No parser callback, 1 : Parser callback
+#define FW_APP_PARSER_CALLBACK      (1) // 0 : No parser callback, 1 : Parser callback
 #define FW_APP_PARSER_DEBUG
 
 #if FW_APP_PARSER == FW_APP_TXT_PARSER
@@ -39,7 +39,7 @@
 #define FW_APP_HW_REVISION          (1)
 
 #define FW_APP_FW_MAJOR             (0)
-#define FW_APP_FW_MINOR             (1)
+#define FW_APP_FW_MINOR             (2)
 #define FW_APP_FW_REVISION          (1)
 
 

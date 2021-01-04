@@ -28,9 +28,14 @@ FW_LIB_BEGIN_DECLS
 // Button event.
 #define FW_LIB_MSG_ID_BUTTON_EVENT        (5)
 
+// Read temperature.
 #define FW_LIB_MSG_ID_READ_TEMPERATURE    (6)
 
+// Read humidity.
 #define FW_LIB_MSG_ID_READ_HUMIDITY       (7)
+
+// Read temperature and humidity.
+#define FW_LIB_MSG_ID_READ_TEMP_AND_HUM   (8)
 
 // Device IDs
 #define FW_LIB_DEVICE_ID_UNKNOWN          (0)

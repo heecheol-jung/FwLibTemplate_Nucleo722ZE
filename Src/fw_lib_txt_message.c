@@ -48,6 +48,12 @@ FW_LIB_DECLARE(uint8_t) fw_lib_txt_msg_build_command(const uint32_t device_id, c
       // ex) RHUM 1,1\n
       len = sprintf((char*)packet_buf, "%s %ld,%d%c", fw_lib_txt_msg_get_message_name(message_id), device_id, args[0].value.uint8_value, FW_LIB_TXT_MSG_TAIL);
       break;
+
+    case FW_LIB_MSG_ID_READ_TEMP_AND_HUM:
+      // RTAH device_id,sensor_num\n
+      // ex) RHUM 1,1\n
+      len = sprintf((char*)packet_buf, "%s %ld,%d%c", fw_lib_txt_msg_get_message_name(message_id), device_id, args[0].value.uint8_value, FW_LIB_TXT_MSG_TAIL);
+      break;
     }
   }
     
@@ -111,6 +117,21 @@ FW_LIB_DECLARE(uint8_t) fw_lib_txt_msg_build_response(const uint32_t device_id, 
         (args[1].value.uint16_value & 0x7fff) % 10,
         FW_LIB_TXT_MSG_TAIL);
       break;
+
+    case FW_LIB_MSG_ID_READ_TEMP_AND_HUM:
+      // RTAH device_id,error,sensor_num,temperature_value,humidity_value\n
+      // ex) RHUM 1,0,1,45.6,12.3\n
+      len = sprintf((char*)packet_buf, "%s %ld,%d,%d,%d.%d,%d.%d%c",
+        fw_lib_txt_msg_get_message_name(message_id),
+        device_id,
+        error,
+        args[0].value.uint8_value,
+        (args[1].value.uint16_value & 0xffff) / 10,
+        (args[1].value.uint16_value & 0x7fff) % 10,
+        (args[2].value.uint16_value & 0xffff) / 10,
+        (args[2].value.uint16_value & 0x7fff) % 10,
+        FW_LIB_TXT_MSG_TAIL);
+      break;
     }
   }
 
@@ -160,6 +181,10 @@ FW_LIB_DECLARE(char*) fw_lib_txt_msg_get_message_name(const uint8_t message_id)
 
   case FW_LIB_MSG_ID_READ_HUMIDITY:
     return FW_LIB_TXT_RHUM_STR;
+
+  case FW_LIB_MSG_ID_READ_TEMP_AND_HUM:
+    return FW_LIB_TXT_RTAH_STR;
+    break;
   }
 
   return NULL;

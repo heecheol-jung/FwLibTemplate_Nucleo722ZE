@@ -159,6 +159,15 @@ typedef struct _fw_bin_msg_read_dht22_resp
   uint16_t                sensor_value;
 } fw_bin_msg_read_dht22_resp_t;
 
+// Read DHT22 temperature and humidity response.
+typedef struct _fw_bin_msg_read_dht22_temp_hum_resp
+{
+  fw_lib_bin_msg_header_t header;
+  uint8_t                 sensor_number;
+  uint16_t                temp_value;
+  uint16_t                hum_value;
+} fw_bin_msg_read_dht22_temp_hum_resp_t;
+
 
 FW_LIB_END_PACK
 

@@ -12,6 +12,8 @@
 
 #define FW_LIB_DHT22_MAX_BIT_LEN  (40)
 
+FW_LIB_BEGIN_DECLS
+
 // Read interval : 2 seconds
 // https://randomnerdtutorials.com/esp32-dht11-dht22-temperature-humidity-sensor-arduino-ide/#:~:text=The%20DHT22%20sensor%20has%20a%20better%20resolution%20and,However%2C%20you%20can%20request%20sensor%20readings%20every%20second.
 typedef struct _fw_lib_dht22
@@ -52,5 +54,7 @@ FW_LIB_DECLARE(uint16_t) fw_lib_dht22_decode_readings(fw_lib_dht22 *handle);
 FW_LIB_DECLARE(uint16_t) fw_lib_dht22_get_humidity(fw_lib_dht22 *handle);
 FW_LIB_DECLARE(uint16_t) fw_lib_dht22_get_temperature(fw_lib_dht22 *handle);
 FW_LIB_DECLARE(void)     fw_lib_dht22_gather_timing_data(fw_lib_dht22 *handle);
+
+FW_LIB_END_DECLS
 
 #endif

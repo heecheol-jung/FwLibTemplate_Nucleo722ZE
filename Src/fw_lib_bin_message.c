@@ -20,7 +20,8 @@ FW_LIB_DECLARE(uint8_t) fw_lib_bin_msg_build_command(const uint32_t device_id, c
     msg_size = sizeof(fw_bin_msg_write_gpio_cmd_t);
   }
   else if ((message_id == FW_LIB_MSG_ID_READ_TEMPERATURE) ||
-           (message_id == FW_LIB_MSG_ID_READ_HUMIDITY))
+           (message_id == FW_LIB_MSG_ID_READ_HUMIDITY) ||
+           (message_id == FW_LIB_MSG_ID_READ_TEMP_AND_HUM))
   {
     msg_size = sizeof(fw_bin_msg_read_dht22_cmd_t);
   }
@@ -82,6 +83,10 @@ FW_LIB_DECLARE(uint8_t) fw_lib_bin_msg_build_response(const uint32_t device_id, 
              (message_id == FW_LIB_MSG_ID_READ_HUMIDITY))
     {
       msg_size = sizeof(fw_bin_msg_read_dht22_resp_t);
+    }
+    else if (message_id == FW_LIB_MSG_ID_READ_TEMP_AND_HUM)
+    {
+      msg_size = sizeof(fw_bin_msg_read_dht22_temp_hum_resp_t);
     }
     else
     {

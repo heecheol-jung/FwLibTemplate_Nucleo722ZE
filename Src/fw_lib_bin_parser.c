@@ -148,7 +148,8 @@ static fw_lib_bool_t check_header_payload(fw_lib_bin_parser_t* parser_handle)
       msg_size = sizeof(fw_bin_msg_write_gpio_cmd_t);
     }
     else if ((header->message_id == FW_LIB_MSG_ID_READ_TEMPERATURE) ||
-             (header->message_id == FW_LIB_MSG_ID_READ_HUMIDITY))
+             (header->message_id == FW_LIB_MSG_ID_READ_HUMIDITY) ||
+             (header->message_id == FW_LIB_MSG_ID_READ_TEMP_AND_HUM))
     {
       msg_size = sizeof(fw_bin_msg_read_dht22_cmd_t);
     }
@@ -173,6 +174,10 @@ static fw_lib_bool_t check_header_payload(fw_lib_bin_parser_t* parser_handle)
                (header->message_id == FW_LIB_MSG_ID_READ_HUMIDITY))
       {
         msg_size = sizeof(fw_bin_msg_read_dht22_resp_t);
+      }
+      else if (header->message_id == FW_LIB_MSG_ID_READ_TEMP_AND_HUM)
+      {
+        msg_size = sizeof(fw_bin_msg_read_dht22_temp_hum_resp_t);
       }
     }
   }

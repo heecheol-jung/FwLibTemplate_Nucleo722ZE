@@ -322,6 +322,10 @@ FW_LIB_DECLARE(uint8_t) fw_lib_txt_parser_get_msg_id(uint8_t* buf, uint8_t buf_s
     {
       return FW_LIB_MSG_ID_READ_HUMIDITY;
     }
+    else if (strcmp(FW_LIB_TXT_RTAH_STR, (const char*)buf) == 0)
+    {
+      return FW_LIB_MSG_ID_READ_TEMP_AND_HUM;
+    }
   }
   else if (buf_size == 5)
   {
@@ -401,6 +405,7 @@ static fw_lib_bool_t is_command_with_arguments(uint8_t msg_id)
   case FW_LIB_MSG_ID_WRITE_GPIO:
   case FW_LIB_MSG_ID_READ_TEMPERATURE:
   case FW_LIB_MSG_ID_READ_HUMIDITY:
+  case FW_LIB_MSG_ID_READ_TEMP_AND_HUM:
     return FW_LIB_TRUE;
   }
   return FW_LIB_FALSE;
@@ -444,7 +449,8 @@ static fw_lib_bool_t process_command_data(fw_lib_txt_parser_t* parser_handle)
     }
   }
   else if ((parser_handle->msg_id == FW_LIB_MSG_ID_READ_TEMPERATURE) ||
-           (parser_handle->msg_id == FW_LIB_MSG_ID_READ_HUMIDITY))
+           (parser_handle->msg_id == FW_LIB_MSG_ID_READ_HUMIDITY) ||
+           (parser_handle->msg_id == FW_LIB_MSG_ID_READ_TEMP_AND_HUM))
     {
       if (parser_handle->arg_count < 1)
       {
@@ -533,6 +539,25 @@ static fw_lib_bool_t process_response_event_data(fw_lib_txt_parser_t* parser_han
       ret = FW_LIB_TRUE;
     }
     else if (parser_handle->arg_count == 2)
+    {
+      parser_handle->args[parser_handle->arg_count].type = FW_LIB_ARG_TYPE_DOUBLE;
+      parser_handle->args[parser_handle->arg_count].value.double_value = atof((const char*)parser_handle->buf);
+      parser_handle->arg_count++;
+
+      ret = FW_LIB_TRUE;
+    }
+  }
+  else if (parser_handle->msg_id == FW_LIB_MSG_ID_READ_TEMP_AND_HUM)
+  {
+    if (parser_handle->arg_count < 2)
+    {
+      parser_handle->args[parser_handle->arg_count].type = FW_LIB_ARG_TYPE_UINT8;
+      parser_handle->args[parser_handle->arg_count].value.uint8_value = (uint8_t)atoi((const char*)parser_handle->buf);
+      parser_handle->arg_count++;
+
+      ret = FW_LIB_TRUE;
+    }
+    else if (parser_handle->arg_count < 4)
     {
       parser_handle->args[parser_handle->arg_count].type = FW_LIB_ARG_TYPE_DOUBLE;
       parser_handle->args[parser_handle->arg_count].value.double_value = atof((const char*)parser_handle->buf);
