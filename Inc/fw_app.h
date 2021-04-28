@@ -8,31 +8,31 @@
 #include "usart.h"
 #include "gpio.h"
 
-#include "fw_lib_def.h"
-#include "fw_lib_queue.h"
-#include "fw_lib_message.h"
-#include "fw_lib_dio.h"
-#include "fw_lib_stm32.h"
-#include "fw_lib_dht22.h"
-#include "fw_lib_ds18b20.h"
+#include "fl_def.h"
+#include "fl_queue.h"
+#include "fl_message_def.h"
+#include "fl_dio.h"
+#include "fl_stm32.h"
+#include "fl_dht22.h"
+#include "fl_ds18b20.h"
 
 // Parser defines
 #define FW_APP_TXT_PARSER           (0)
 #define FW_APP_BIN_PARSER           (1)
 
-#define FW_APP_PARSER               FW_APP_TXT_PARSER
-//#define FW_APP_PARSER               FW_APP_BIN_PARSER
+//#define FW_APP_PARSER               FW_APP_TXT_PARSER
+#define FW_APP_PARSER               FW_APP_BIN_PARSER
 
-#define FW_APP_PARSER_CALLBACK      (1) // 0 : No parser callback, 1 : Parser callback
+#define FW_APP_PARSER_CALLBACK      (0) // 0 : No parser callback, 1 : Parser callback
 #define FW_APP_PARSER_DEBUG
 
 #if FW_APP_PARSER == FW_APP_TXT_PARSER
-#include "fw_lib_txt_message.h"
-#include "fw_lib_txt_parser.h"
+#include "fl_txt_message.h"
+#include "fl_txt_message_parser.h"
 #else
-#include "fw_lib_bin_message.h"
-#include "fw_lib_bin_parser.h"
-#include "fw_lib_util.h"
+#include "fl_bin_message.h"
+#include "fl_bin_message_parser.h"
+#include "fl_util.h"
 #endif
 
 #define FW_APP_HW_MAJOR             (0)
@@ -82,7 +82,7 @@
 #define FW_APP_DHT22_MIN_NUM        (1)
 #define FW_APP_DS18B20_COUNT        (1)
 
-FW_LIB_BEGIN_PACK1
+FL_BEGIN_PACK1
 
 typedef struct _fw_app_debug_manager
 {
@@ -98,13 +98,13 @@ typedef struct _fw_app_proto_manager
   FW_APP_UART_HANDLE      uart_handle;
 
   // Buffer for received bytes.
-  fw_lib_queue_t          q;
+  fl_queue_t          q;
 #if FW_APP_PARSER == FW_APP_TXT_PARSER
-  fw_lib_txt_parser_t     parser_handle;
-  uint8_t                 out_buf[FW_LIB_TXT_MSG_MAX_LENGTH];
+  fl_txt_msg_parser_t     parser_handle;
+  uint8_t                 out_buf[FL_TXT_MSG_MAX_LENGTH];
 #else
-  fw_lib_bin_parser_t     parser_handle;
-  uint8_t                 out_buf[FW_LIB_BIN_MSG_MAX_LENGTH];
+  fl_bin_msg_parser_t     parser_handle;
+  uint8_t                 out_buf[FL_BIN_MSG_MAX_LENGTH];
 #endif
   uint8_t                 out_length;
   uint8_t                 rx_buf[1];
@@ -124,8 +124,8 @@ typedef struct _fw_app_button
 
 typedef struct _fw_app_dht22
 {
-  fw_lib_stm32_gpio_handle  dht22_gpio;
-  fw_lib_dht22              dht22_handle;
+  fl_stm32_gpio_handle  dht22_gpio;
+  fl_dht22              dht22_handle;
 } fw_app_dht22_t;
 // Firmware application manager.
 typedef struct _fw_app
@@ -137,30 +137,30 @@ typedef struct _fw_app
   // Current tick count.
   volatile uint32_t       tick;
 
-  fw_lib_bool_t           button_initialized;
+  fl_bool_t               button_initialized;
 
   // Protocol manager.
   fw_app_proto_manager_t  proto_mgr;
 
-  fw_lib_dio_port_t       dins[FW_APP_MAX_DIN];
-  fw_lib_dio_port_t       douts[FW_APP_MAX_DOUT];
+  fl_dio_port_t           dins[FW_APP_MAX_DIN];
+  fl_dio_port_t           douts[FW_APP_MAX_DOUT];
   fw_app_button           buttons[FW_APP_BTN_COUNT];
   fw_app_dht22_t          dht22[FW_APP_DHT22_COUNT];
-  fw_lib_ds18b20_manager  ds18b20[FW_APP_DS18B20_COUNT];
+  fl_ds18b20_manager      ds18b20[FW_APP_DS18B20_COUNT];
 } fw_app_t;
 
-FW_LIB_END_PACK
+FL_END_PACK
 
-FW_LIB_BEGIN_DECLS
+FL_BEGIN_DECLS
 
-FW_LIB_DECLARE_DATA extern fw_app_t g_app;
+FL_DECLARE_DATA extern fw_app_t g_app;
 
-FW_LIB_DECLARE(void) fw_app_init(void);
-FW_LIB_DECLARE(void) fw_app_hw_init(void);
-FW_LIB_DECLARE(void) fw_app_systick(void);
-FW_LIB_DECLARE(fw_lib_dio_port_t*) fw_app_get_dout_port(uint8_t port_id);
-FW_LIB_DECLARE(fw_lib_dio_port_t*) fw_app_get_din_port(uint8_t port_id);
+FL_DECLARE(void) fw_app_init(void);
+FL_DECLARE(void) fw_app_hw_init(void);
+FL_DECLARE(void) fw_app_systick(void);
+FL_DECLARE(fl_dio_port_t*) fw_app_get_dout_port(uint8_t port_id);
+FL_DECLARE(fl_dio_port_t*) fw_app_get_din_port(uint8_t port_id);
 
-FW_LIB_END_DECLS
+FL_END_DECLS
 
 #endif

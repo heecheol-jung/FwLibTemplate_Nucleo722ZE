@@ -1,51 +1,51 @@
 /*
- * fw_lib_one_wire.c
+ * fl_one_wire.c
  *
  *  Created on: Dec 30, 2020
  *      Author: hcjung
  */
 
+#include <fl_one_wire.h>
 #include "gpio.h"
-#include "fw_lib_one_wire.h"
 
-FW_LIB_DECLARE(void) fw_lib_ow_init(fw_lib_one_wire *handle, GPIO_TypeDef* gpio_handle, uint16_t gpio_pin)
+FL_DECLARE(void) fl_ow_init(fl_one_wire *handle, GPIO_TypeDef* gpio_handle, uint16_t gpio_pin)
 {
   handle->gpio_handle = gpio_handle;
   handle->gpio_pin = gpio_pin;
 
-  fw_lib_ow_output(handle);
-  fw_lib_ow_high(handle);
+  fl_ow_output(handle);
+  fl_ow_high(handle);
   handle->cb_delay_us(1000);
 
-  fw_lib_ow_low(handle);
+  fl_ow_low(handle);
   handle->cb_delay_us(1000);
 
-  fw_lib_ow_high(handle);
+  fl_ow_high(handle);
   handle->cb_delay_us(2000);
 }
 
-FW_LIB_DECLARE(uint8_t) fw_lib_ow_reset(fw_lib_one_wire *handle)
+FL_DECLARE(uint8_t) fl_ow_reset(fl_one_wire *handle)
 {
   uint8_t i;
 
   /* Line low, and wait 480us */
-  fw_lib_ow_low(handle);
-  fw_lib_ow_output(handle);
+  fl_ow_low(handle);
+  fl_ow_output(handle);
   handle->cb_delay_us(480);
   handle->cb_delay_us(20);
 
   /* Release line and wait for 70us */
-  fw_lib_ow_input(handle);
+  fl_ow_input(handle);
   handle->cb_delay_us(70);
 
   /* Check bit value */
-  i = fw_lib_ow_read_bit(handle);
+  i = fl_ow_read_bit(handle);
   handle->cb_delay_us(410);
 
   return i;
 }
 
-FW_LIB_DECLARE(uint8_t) fw_lib_ow_search(fw_lib_one_wire *handle, uint8_t command)
+FL_DECLARE(uint8_t) fl_ow_search(fl_one_wire *handle, uint8_t command)
 {
   uint8_t id_bit_number;
   uint8_t last_zero, rom_byte_number, search_result;
@@ -63,7 +63,7 @@ FW_LIB_DECLARE(uint8_t) fw_lib_ow_search(fw_lib_one_wire *handle, uint8_t comman
   if (!handle->last_device_flag)
   {
     // 1-Wire reset
-    if (fw_lib_ow_reset(handle))
+    if (fl_ow_reset(handle))
     {
       /* Reset the search */
       handle->last_discrepancy = 0;
@@ -73,14 +73,14 @@ FW_LIB_DECLARE(uint8_t) fw_lib_ow_search(fw_lib_one_wire *handle, uint8_t comman
     }
 
     // issue the search command
-    fw_lib_ow_write_byte(handle, command);
+    fl_ow_write_byte(handle, command);
 
     // loop to do the search
     do
     {
       // read a bit and its complement
-      id_bit = fw_lib_ow_read_bit(handle);
-      cmp_id_bit = fw_lib_ow_read_bit(handle);
+      id_bit = fl_ow_read_bit(handle);
+      cmp_id_bit = fl_ow_read_bit(handle);
 
       // check for no devices on 1-wire
       if ((id_bit == 1) && (cmp_id_bit == 1))
@@ -133,7 +133,7 @@ FW_LIB_DECLARE(uint8_t) fw_lib_ow_search(fw_lib_one_wire *handle, uint8_t comman
         }
 
         // serial number search direction write bit
-        fw_lib_ow_write_bit(handle, search_direction);
+        fl_ow_write_bit(handle, search_direction);
 
         // increment the byte counter id_bit_number
         // and shift the mask rom_byte_mask
@@ -178,7 +178,7 @@ FW_LIB_DECLARE(uint8_t) fw_lib_ow_search(fw_lib_one_wire *handle, uint8_t comman
   return search_result;
 
 }
-FW_LIB_DECLARE(void) fw_lib_ow_reset_search(fw_lib_one_wire *handle)
+FL_DECLARE(void) fl_ow_reset_search(fl_one_wire *handle)
 {
   /* Reset the search state */
   handle->last_discrepancy = 0;
@@ -186,22 +186,22 @@ FW_LIB_DECLARE(void) fw_lib_ow_reset_search(fw_lib_one_wire *handle)
   handle->last_family_discrepancy = 0;
 }
 
-FW_LIB_DECLARE(uint8_t) fw_lib_ow_first(fw_lib_one_wire *handle)
+FL_DECLARE(uint8_t) fl_ow_first(fl_one_wire *handle)
 {
   /* Reset search values */
-  fw_lib_ow_reset_search(handle);
+  fl_ow_reset_search(handle);
 
   /* Start with searching */
-  return fw_lib_ow_search(handle, FW_LIB_OW_CMD_SEARCHROM);
+  return fl_ow_search(handle, FL_OW_CMD_SEARCHROM);
 }
 
-FW_LIB_DECLARE(uint8_t) fw_lib_ow_next(fw_lib_one_wire *handle)
+FL_DECLARE(uint8_t) fl_ow_next(fl_one_wire *handle)
 {
   /* Leave the search state alone */
-  return fw_lib_ow_search(handle, FW_LIB_OW_CMD_SEARCHROM);
+  return fl_ow_search(handle, FL_OW_CMD_SEARCHROM);
 }
 
-FW_LIB_DECLARE(void) fw_lib_ow_get_full_rom(fw_lib_one_wire *handle, uint8_t* first_idx)
+FL_DECLARE(void) fl_ow_get_full_rom(fl_one_wire *handle, uint8_t* first_idx)
 {
   uint8_t i;
 
@@ -211,30 +211,30 @@ FW_LIB_DECLARE(void) fw_lib_ow_get_full_rom(fw_lib_one_wire *handle, uint8_t* fi
   }
 }
 
-FW_LIB_DECLARE(void) fw_lib_ow_select(fw_lib_one_wire *handle, uint8_t* addr)
+FL_DECLARE(void) fl_ow_select(fl_one_wire *handle, uint8_t* addr)
 {
   uint8_t i;
 
-  fw_lib_ow_write_byte(handle, FW_LIB_OW_CMD_MATCHROM);
+  fl_ow_write_byte(handle, FL_OW_CMD_MATCHROM);
 
   for (i = 0; i < 8; i++)
   {
-    fw_lib_ow_write_byte(handle, *(addr + i));
+    fl_ow_write_byte(handle, *(addr + i));
   }
 }
 
-FW_LIB_DECLARE(void) fw_lib_ow_select_with_pointer(fw_lib_one_wire *handle, uint8_t* rom)
+FL_DECLARE(void) fl_ow_select_with_pointer(fl_one_wire *handle, uint8_t* rom)
 {
   uint8_t i;
-  fw_lib_ow_write_byte(handle, FW_LIB_OW_CMD_MATCHROM);
+  fl_ow_write_byte(handle, FL_OW_CMD_MATCHROM);
 
   for (i = 0; i < 8; i++)
   {
-    fw_lib_ow_write_byte(handle, *(rom + i));
+    fl_ow_write_byte(handle, *(rom + i));
   }
 }
 
-FW_LIB_DECLARE(uint8_t) fw_lib_ow_crc8(uint8_t *addr, uint8_t len)
+FL_DECLARE(uint8_t) fl_ow_crc8(uint8_t *addr, uint8_t len)
 {
   uint8_t crc = 0, inbyte, i, mix;
 
@@ -257,17 +257,17 @@ FW_LIB_DECLARE(uint8_t) fw_lib_ow_crc8(uint8_t *addr, uint8_t len)
   return crc;
 }
 
-FW_LIB_DECLARE(void)    fw_lib_ow_low(fw_lib_one_wire *handle)
+FL_DECLARE(void)    fl_ow_low(fl_one_wire *handle)
 {
   handle->gpio_handle->BSRR = handle->gpio_pin << 16;
 }
 
-FW_LIB_DECLARE(void)    fw_lib_ow_high(fw_lib_one_wire *handle)
+FL_DECLARE(void)    fl_ow_high(fl_one_wire *handle)
 {
   handle->gpio_handle->BSRR = handle->gpio_pin;
 }
 
-FW_LIB_DECLARE(void)    fw_lib_ow_input(fw_lib_one_wire *handle)
+FL_DECLARE(void)    fl_ow_input(fl_one_wire *handle)
 {
   GPIO_InitTypeDef  gpinit;
   gpinit.Mode = GPIO_MODE_INPUT;
@@ -277,7 +277,7 @@ FW_LIB_DECLARE(void)    fw_lib_ow_input(fw_lib_one_wire *handle)
   HAL_GPIO_Init(handle->gpio_handle,&gpinit);
 }
 
-FW_LIB_DECLARE(void)    fw_lib_ow_output(fw_lib_one_wire *handle)
+FL_DECLARE(void)    fl_ow_output(fl_one_wire *handle)
 {
   GPIO_InitTypeDef  gpinit;
   gpinit.Mode = GPIO_MODE_OUTPUT_OD;
@@ -287,28 +287,28 @@ FW_LIB_DECLARE(void)    fw_lib_ow_output(fw_lib_one_wire *handle)
   HAL_GPIO_Init(handle->gpio_handle,&gpinit);
 }
 
-FW_LIB_DECLARE(uint8_t) fw_lib_ow_read_byte(fw_lib_one_wire *handle)
+FL_DECLARE(uint8_t) fl_ow_read_byte(fl_one_wire *handle)
 {
   uint8_t i = 8, byte = 0;
   while (i--) {
     byte >>= 1;
-    byte |= (fw_lib_ow_read_bit(handle) << 7);
+    byte |= (fl_ow_read_bit(handle) << 7);
   }
 
   return byte;
 }
 
-FW_LIB_DECLARE(uint8_t) fw_lib_ow_read_bit(fw_lib_one_wire *handle)
+FL_DECLARE(uint8_t) fl_ow_read_bit(fl_one_wire *handle)
 {
   uint8_t bit = 0;
 
   /* Line low */
-  fw_lib_ow_low(handle);
-  fw_lib_ow_output(handle);
+  fl_ow_low(handle);
+  fl_ow_output(handle);
   handle->cb_delay_us(2);
 
   /* Release line */
-  fw_lib_ow_input(handle);
+  fl_ow_input(handle);
   handle->cb_delay_us(10);
 
   /* Read line value */
@@ -324,46 +324,46 @@ FW_LIB_DECLARE(uint8_t) fw_lib_ow_read_bit(fw_lib_one_wire *handle)
   return bit;
 }
 
-FW_LIB_DECLARE(void) fw_lib_ow_write_byte(fw_lib_one_wire *handle, uint8_t val)
+FL_DECLARE(void) fl_ow_write_byte(fl_one_wire *handle, uint8_t val)
 {
   uint8_t i = 8;
   /* Write 8 bits */
   while (i--)
   {
     /* LSB bit is first */
-    fw_lib_ow_write_bit(handle, val & 0x01);
+    fl_ow_write_bit(handle, val & 0x01);
     val >>= 1;
   }
 }
 
-FW_LIB_DECLARE(void) fw_lib_ow_write_bit(fw_lib_one_wire *handle, uint8_t bit)
+FL_DECLARE(void) fl_ow_write_bit(fl_one_wire *handle, uint8_t bit)
 {
   if (bit)
   {
     /* Set line low */
-    fw_lib_ow_low(handle);
-    fw_lib_ow_output(handle);
+    fl_ow_low(handle);
+    fl_ow_output(handle);
     handle->cb_delay_us(10);
 
     /* Bit high */
-    fw_lib_ow_input(handle);
+    fl_ow_input(handle);
 
     /* Wait for 55 us and release the line */
     handle->cb_delay_us(55);
-    fw_lib_ow_input(handle);
+    fl_ow_input(handle);
   }
   else
   {
     /* Set line low */
-    fw_lib_ow_low(handle);
-    fw_lib_ow_output(handle);
+    fl_ow_low(handle);
+    fl_ow_output(handle);
     handle->cb_delay_us(60);
 
     /* Bit high */
-    fw_lib_ow_input(handle);
+    fl_ow_input(handle);
 
     /* Wait for 5 us and release the line */
     handle->cb_delay_us(5);
-    fw_lib_ow_input(handle);
+    fl_ow_input(handle);
   }
 }

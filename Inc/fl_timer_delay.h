@@ -1,9 +1,11 @@
-#ifndef FW_LIB_TIMER_DELAY_H
-#define FW_LIB_TIMER_DELAY_H
+// Firmware library timer delay
+
+#ifndef FL_TIMER_DELAY_H
+#define FL_TIMER_DELAY_H
 
 extern TIM_HandleTypeDef htim2;
 
-__STATIC_INLINE void fw_lib_timer2_delay_us(volatile uint32_t microseconds)
+__STATIC_INLINE void fl_timer2_delay_us(volatile uint32_t microseconds)
 {
   uint32_t clk_cycle_start = __HAL_TIM_GET_COUNTER(&htim2);
 

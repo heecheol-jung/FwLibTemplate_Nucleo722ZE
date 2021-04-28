@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : USB_OTG.c
-  * Description        : This file provides code for the configuration
-  *                      of the USB_OTG instances.
+  * @file    usb_otg.c
+  * @brief   This file provides code for the configuration
+  *          of the USB_OTG instances.
   ******************************************************************************
   * @attention
   *
@@ -31,6 +31,13 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 void MX_USB_OTG_FS_PCD_Init(void)
 {
 
+  /* USER CODE BEGIN USB_OTG_FS_Init 0 */
+
+  /* USER CODE END USB_OTG_FS_Init 0 */
+
+  /* USER CODE BEGIN USB_OTG_FS_Init 1 */
+
+  /* USER CODE END USB_OTG_FS_Init 1 */
   hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
   hpcd_USB_OTG_FS.Init.dev_endpoints = 6;
   hpcd_USB_OTG_FS.Init.dma_enable = DISABLE;
@@ -45,6 +52,9 @@ void MX_USB_OTG_FS_PCD_Init(void)
   {
     Error_Handler();
   }
+  /* USER CODE BEGIN USB_OTG_FS_Init 2 */
+
+  /* USER CODE END USB_OTG_FS_Init 2 */
 
 }
 
