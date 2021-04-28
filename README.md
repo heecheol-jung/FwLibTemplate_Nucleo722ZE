@@ -3,11 +3,11 @@ Firmware library template for NUCLEO F722ZE
 Default device ID : 1
 
 1. STM32CubeMX
-- Version 5.6.1
-- Firmware Package Name and Version : STM32Cube FW_F7 V1.16.0
+- Version 6.2.1
+- Firmware Package Name and Version : STM32Cube FW_F7 V1.16.1
 
 2. STM32CubeIDE
-- Version: 1.3.1 
+- Version: 1.6.1 
 - Build: 6291_20200406_0752 (UTC)
 - Formatter style
   Window -> Preferences -> C/C++ -> Code Style -> Formatter -> Import
